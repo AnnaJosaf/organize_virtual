@@ -2,8 +2,7 @@ name: Notify Team of Upcoming Milestones
 
 on:
   schedule:
-    - cron: '0 12 * * 1'  # Schedule to run every Monday at 12:00 PM UTC (adjust as needed)
-
+    - cron: '* * * * *'  
 jobs:
   notify:
     runs-on: ubuntu-latest
