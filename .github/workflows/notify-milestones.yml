@@ -1,0 +1,33 @@
+name: Notify Team of Upcoming Milestones
+
+on:
+  schedule:
+    - cron: '0 12 * * 1'  # Schedule to run every Monday at 12:00 PM UTC (adjust as needed)
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '14'
+
+    - name: Notify Team of Upcoming Milestones
+      run: |
+        mkdir scripts
+        echo "#!/bin/bash" > scripts/notify-milestones.sh
+        echo 'MILESTONES=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "https://api.github.com/repos/${GITHUB_REPOSITORY}/milestones?state=open")' >> scripts/notify-milestones.sh
+        echo 'UPCOMING_MILESTONES=$(echo "$MILESTONES" | jq ".[] | select(.due_on <= \"$(date -d \'+7 days\' \'+%Y-%m-%dT%H:%M:%SZ')\")")' >> scripts/notify-milestones.sh
+        echo 'if [ -n "$UPCOMING_MILESTONES" ]; then' >> scripts/notify-milestones.sh
+        echo '  MESSAGE=":alarm_clock: *Upcoming Milestones*:\n$UPCOMING_MILESTONES"' >> scripts/notify-milestones.sh
+        echo '  curl -X POST -H '\''Content-type: application/json'\'' --data "{\"text\":\"$MESSAGE\"}" $SLACK_WEBHOOK_URL' >> scripts/notify-milestones.sh
+        echo 'fi' >> scripts/notify-milestones.sh
+        chmod +x scripts/notify-milestones.sh
+        ./scripts/notify-milestones.sh
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
